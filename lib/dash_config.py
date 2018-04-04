@@ -11,7 +11,7 @@ class DashConfig():
 
     @classmethod
     def slurp_config_file(self, filename):
-        # read dash.conf config but skip commented lines
+        # read machinecoin.conf config but skip commented lines
         f = io.open(filename)
         lines = []
         for line in f:
@@ -34,7 +34,7 @@ class DashConfig():
         creds = {key: value for (key, value) in match}
 
         # standard Dash defaults...
-        default_port = 9998 if (network == 'mainnet') else 19998
+        default_port = 40332 if (network == 'mainnet') else 50332
 
         # use default port for network if not specified in dash.conf
         if not ('port' in creds):
