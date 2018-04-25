@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import base58
+import bech32
 import hashlib
 import re
 from decimal import Decimal
@@ -19,12 +20,12 @@ def is_valid_dash_address(address, network='mainnet'):
     # 4 checksum bytes are appended so the total number of
     # base58 encoded bytes should be 25.  This means the number of characters
     # in the encoding should be about 34 ( 25 * log2( 256 ) / log2( 58 ) ).
-    dash_version = 53 if network == 'testnet' else 50
+    machinecoin_version = 53 if network == 'testnet' else 50
 
     # Check length (This is important because the base58 library has problems
     # with long addresses (which are invalid anyway).
     if ((len(address) < 26) or (len(address) > 35)):
-        return False
+        return is_valid_bech32_address(address, network)
 
     address_version = None
 
@@ -32,14 +33,42 @@ def is_valid_dash_address(address, network='mainnet'):
         decoded = base58.b58decode_chk(address)
         address_version = ord(decoded[0:1])
     except:
-        # rescue from exception, not a valid Dash address
-        return False
+        # check if valid bech32 address if it's an invalid base58 one
+        return is_valid_bech32_address(address, network)
 
-    if (address_version != dash_version):
-        return False
+    if (address_version != machinecoin_version):
+        return is_valid_bech32_address(address, network)
 
     return True
 
+def is_valid_bech32_address(address, network='mainnet'):
+    # Bech32 addresses are standard now, atleast for MAC,
+    # so we're going to check them.
+    machinecoin_hrp = "tmc" if network == 'testnet' else "mc"
+    
+    # Check length since bech32 addresses shouldn't exceed 89 characters.
+    # They can be long, however we should set a break at some point.
+    if ((len(address) > 89)):
+        return False
+    
+    address_hrp = None
+    address_data = None
+    
+    try:
+        decoded = bech32.bech32_decode(address)
+        address_hrp = decoded[0]
+        address_data = decoded[1]
+    except:
+        # rescue from exception, not a valid bech32 address
+        return False
+    
+    if (address_hrp != machinecoin_hrp):
+        return False
+    
+    if (address_data == None):
+        return False
+    
+    return True
 
 def hashit(data):
     return int(hashlib.sha256(data.encode('utf-8')).hexdigest(), 16)
