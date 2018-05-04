@@ -20,7 +20,7 @@ def is_valid_dash_address(address, network='mainnet'):
     # 4 checksum bytes are appended so the total number of
     # base58 encoded bytes should be 25.  This means the number of characters
     # in the encoding should be about 34 ( 25 * log2( 256 ) / log2( 58 ) ).
-    machinecoin_version = 53 if network == 'testnet' else 50
+    # machinecoin_version = 53 if network == 'testnet' else 50
     machinecoin_script_version = 23 if network == 'testnet' else 20
 
     # Check length (This is important because the base58 library has problems
@@ -39,7 +39,8 @@ def is_valid_dash_address(address, network='mainnet'):
         # return is_valid_bech32_address(address, network)
         return False
 
-    if (address_version == machinecoin_version or address_version == machinecoin_script_version):
+    # if (address_version == machinecoin_version or address_version == machinecoin_script_version):
+    if (address_version == machinecoin_script_version):
         return True
 
     # return is_valid_bech32_address(address, network)
