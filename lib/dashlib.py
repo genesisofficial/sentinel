@@ -13,7 +13,7 @@ from misc import printdbg, epoch2str
 import time
 
 
-def is_valid_dash_address(address, network='mainnet'):
+def is_valid_machinecoin_address(address, network='mainnet'):
     # Only public key addresses are allowed
     # A valid address is a RIPEMD-160 hash which contains 20 bytes
     # Prior to base58 encoding 1 version byte is prepended and
@@ -213,45 +213,45 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time):
     return sb
 
 
-# shims 'til we can fix the dashd side
-def SHIM_serialise_for_dashd(sentinel_hex):
-    from models import DASHD_GOVOBJ_TYPES
+# shims 'til we can fix the machinecoind side
+def SHIM_serialise_for_machinecoind(sentinel_hex):
+    from models import MACHINECOIND_GOVOBJ_TYPES
     # unpack
     obj = deserialise(sentinel_hex)
 
-    # shim for dashd
+    # shim for machinecoind
     govtype = obj[0]
 
     # add 'type' attribute
-    obj[1]['type'] = DASHD_GOVOBJ_TYPES[govtype]
+    obj[1]['type'] = MACHINECOIND_GOVOBJ_TYPES[govtype]
 
-    # superblock => "trigger" in dashd
+    # superblock => "trigger" in machinecoind
     if govtype == 'superblock':
         obj[0] = 'trigger'
 
-    # dashd expects an array (even though there is only a 1:1 relationship between govobj->class)
+    # machinecoind expects an array (even though there is only a 1:1 relationship between govobj->class)
     obj = [obj]
 
     # re-pack
-    dashd_hex = serialise(obj)
-    return dashd_hex
+    machinecoind_hex = serialise(obj)
+    return machinecoind_hex
 
 
-# shims 'til we can fix the dashd side
-def SHIM_deserialise_from_dashd(dashd_hex):
-    from models import DASHD_GOVOBJ_TYPES
+# shims 'til we can fix the machinecoind side
+def SHIM_deserialise_from_machinecoind(machinecoind_hex):
+    from models import MACHINECOIND_GOVOBJ_TYPES
 
     # unpack
-    obj = deserialise(dashd_hex)
+    obj = deserialise(machinecoind_hex)
 
-    # shim from dashd
+    # shim from machinecoind
     # only one element in the array...
     obj = obj[0]
 
     # extract the govobj type
     govtype = obj[0]
 
-    # superblock => "trigger" in dashd
+    # superblock => "trigger" in machinecoind
     if govtype == 'trigger':
         obj[0] = govtype = 'superblock'
 
@@ -285,7 +285,7 @@ def did_we_vote(output):
     err_msg = ''
 
     try:
-        detail = output.get('detail').get('dash.conf')
+        detail = output.get('detail').get('machinecoin.conf')
         result = detail.get('result')
         if 'errorMessage' in detail:
             err_msg = detail.get('errorMessage')

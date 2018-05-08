@@ -3,27 +3,27 @@
 """
 import sys
 import os
-from dash_config import DashConfig
+from machinecoin_config import MachinecoinConfig
 
 default_sentinel_config = os.path.normpath(
     os.path.join(os.path.dirname(__file__), '../sentinel.conf')
 )
 sentinel_config_file = os.environ.get('SENTINEL_CONFIG', default_sentinel_config)
-sentinel_cfg = DashConfig.tokenize(sentinel_config_file)
+sentinel_cfg = MachinecoinConfig.tokenize(sentinel_config_file)
 sentinel_version = "1.1.0"
-min_dashd_proto_version_with_sentinel_ping = 70017
+min_machinecoind_proto_version_with_sentinel_ping = 70017
 
 
-def get_dash_conf():
+def get_machinecoin_conf():
     home = os.environ.get('HOME')
 
-    dash_conf = os.path.join(home, ".machinecoin/machinecoin.conf")
+    machinecoin_conf = os.path.join(home, ".machinecoin/machinecoin.conf")
     if sys.platform == 'darwin':
-        dash_conf = os.path.join(home, "Library/Application Support/Machinecoin/machinecoin.conf")
+        machinecoin_conf = os.path.join(home, "Library/Application Support/Machinecoin/machinecoin.conf")
 
-    dash_conf = sentinel_cfg.get('dash_conf', dash_conf)
+    machinecoin_conf = sentinel_cfg.get('machinecoin_conf', machinecoin_conf)
 
-    return dash_conf
+    return machinecoin_conf
 
 
 def get_network():
@@ -79,6 +79,6 @@ def get_db_conn():
     return db
 
 
-dash_conf = get_dash_conf()
+machinecoin_conf = get_machinecoin_conf()
 network = get_network()
 db = get_db_conn()
