@@ -3,7 +3,6 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import base58
-import bech32
 import hashlib
 import re
 from decimal import Decimal
@@ -27,7 +26,6 @@ def is_valid_machinecoin_address(address, network='mainnet'):
     # with long addresses (which are invalid anyway).
     if ((len(address) < 26) or (len(address) > 35)):
         return False
-        # return is_valid_bech32_address(address, network)
 
     address_version = None
 
@@ -35,45 +33,14 @@ def is_valid_machinecoin_address(address, network='mainnet'):
         decoded = base58.b58decode_chk(address)
         address_version = ord(decoded[0:1])
     except:
-        # check if valid bech32 address if it's an invalid base58 one
-        # return is_valid_bech32_address(address, network)
+        # rescue from exception, not a valid Machinecoin address
         return False
 
-    # if (address_version == machinecoin_version or address_version == machinecoin_script_version):
-    if (address_version == machinecoin_script_version):
-        return True
+    if (address_version != machinecoin_script_version):
+        return False
 
-    # return is_valid_bech32_address(address, network)
-    return False
-
-def is_valid_bech32_address(address, network='mainnet'):
-    # Bech32 addresses are standard now, atleast for MAC,
-    # so we're going to check them.
-    machinecoin_hrp = "tmc" if network == 'testnet' else "mc"
-    
-    # Check length since bech32 addresses shouldn't exceed 89 characters.
-    # They can be long, however we should set a break at some point.
-    if ((len(address) > 89)):
-        return False
-    
-    address_hrp = None
-    address_data = None
-    
-    try:
-        decoded = bech32.bech32_decode(address)
-        address_hrp = decoded[0]
-        address_data = decoded[1]
-    except:
-        # rescue from exception, not a valid bech32 address
-        return False
-    
-    if (address_hrp != machinecoin_hrp):
-        return False
-    
-    if (address_data == None):
-        return False
-    
     return True
+
 
 def hashit(data):
     return int(hashlib.sha256(data.encode('utf-8')).hexdigest(), 16)
@@ -126,7 +93,7 @@ def parse_masternode_status_vin(status_vin_string):
     return vin
 
 
-def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time):
+def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize):
     from models import Superblock, GovernanceObject, Proposal
     from constants import SUPERBLOCK_FUDGE_WINDOW
 
@@ -136,9 +103,10 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time):
         return None
 
     budget_allocated = Decimal(0)
-    fudge = SUPERBLOCK_FUDGE_WINDOW  # fudge-factor to allow for slighly incorrect estimates
+    fudge = SUPERBLOCK_FUDGE_WINDOW  # fudge-factor to allow for slightly incorrect estimates
 
     payments = []
+
     for proposal in proposals:
         fmt_string = "name: %s, rank: %4d, hash: %s, amount: %s <= %s"
 
@@ -185,12 +153,25 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time):
             )
         )
 
-        # else add proposal and keep track of total budget allocation
-        budget_allocated += proposal.payment_amount
-
         payment = {'address': proposal.payment_address,
                    'amount': "{0:.8f}".format(proposal.payment_amount),
                    'proposal': "{}".format(proposal.object_hash)}
+
+        # calculate current sb data size
+        sb_temp = Superblock(
+            event_block_height=event_block_height,
+            payment_addresses='|'.join([pd['address'] for pd in payments]),
+            payment_amounts='|'.join([pd['amount'] for pd in payments]),
+            proposal_hashes='|'.join([pd['proposal'] for pd in payments])
+        )
+        data_size = len(sb_temp.machinecoind_serialise())
+
+        if data_size > maxgovobjdatasize:
+            printdbg("MAX_GOVERNANCE_OBJECT_DATA_SIZE limit reached!")
+            break
+
+        # else add proposal and keep track of total budget allocation
+        budget_allocated += proposal.payment_amount
         payments.append(payment)
 
     # don't create an empty superblock
@@ -213,55 +194,26 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time):
     return sb
 
 
-# shims 'til we can fix the machinecoind side
+# shims 'til we can fix the JSON format
 def SHIM_serialise_for_machinecoind(sentinel_hex):
-    from models import MACHINECOIND_GOVOBJ_TYPES
+    from models import GOVOBJ_TYPE_STRINGS
+
     # unpack
     obj = deserialise(sentinel_hex)
 
     # shim for machinecoind
-    govtype = obj[0]
-
-    # add 'type' attribute
-    obj[1]['type'] = MACHINECOIND_GOVOBJ_TYPES[govtype]
+    govtype_string = GOVOBJ_TYPE_STRINGS[obj['type']]
 
     # superblock => "trigger" in machinecoind
-    if govtype == 'superblock':
-        obj[0] = 'trigger'
+    if govtype_string == 'superblock':
+        govtype_string = 'trigger'
 
-    # machinecoind expects an array (even though there is only a 1:1 relationship between govobj->class)
-    obj = [obj]
+    # machinecoind expects an array (will be deprecated)
+    obj = [(govtype_string, obj,)]
 
     # re-pack
     machinecoind_hex = serialise(obj)
     return machinecoind_hex
-
-
-# shims 'til we can fix the machinecoind side
-def SHIM_deserialise_from_machinecoind(machinecoind_hex):
-    from models import MACHINECOIND_GOVOBJ_TYPES
-
-    # unpack
-    obj = deserialise(machinecoind_hex)
-
-    # shim from machinecoind
-    # only one element in the array...
-    obj = obj[0]
-
-    # extract the govobj type
-    govtype = obj[0]
-
-    # superblock => "trigger" in machinecoind
-    if govtype == 'trigger':
-        obj[0] = govtype = 'superblock'
-
-    # remove redundant 'type' attribute
-    if 'type' in obj[1]:
-        del obj[1]['type']
-
-    # re-pack
-    sentinel_hex = serialise(obj)
-    return sentinel_hex
 
 
 # convenience

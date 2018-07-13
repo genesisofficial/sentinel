@@ -7,6 +7,6 @@ txindex=1
 
 # JSONRPC
 server=1
-rpcuser=macrpc
+rpcuser=machinecoinrpc
 rpcpassword=abcdefghijklmnopqrstuvwxyz0123456789ABCDEF10
 rpcallowip=127.0.0.1

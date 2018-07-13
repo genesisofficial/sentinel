@@ -4,11 +4,11 @@ An all-powerful toolset for Machinecoin.
 
 [![Build Status](https://travis-ci.org/machinecoinpay/sentinel.svg?branch=master)](https://travis-ci.org/machinecoinpay/sentinel)
 
-Sentinel is an autonomous agent for persisting, processing and automating Machinecoin V12.1 governance objects and tasks, and for expanded functions in the upcoming Machinecoin V13 release (Evolution).
+Sentinel is an autonomous agent for persisting, processing and automating Machinecoin governance objects and tasks, and for expanded functions in the upcoming Machinecoin V13 release (Evolution).
 
-Sentinel is implemented as a Python application that binds to a local version 12.1 machinecoind instance on each Machinecoin V12.1 Masternode.
+Sentinel is implemented as a Python application that binds to a local version 12 machinecoind instance on each Machinecoin Masternode.
 
-This guide covers installing Sentinel onto an existing 12.1 Masternode in Ubuntu 14.04 / 16.04.
+This guide covers installing Sentinel onto an existing Masternode in Ubuntu 14.04 / 16.04.
 
 ## Installation
 
@@ -47,7 +47,7 @@ In the crontab editor, add the lines below, replacing '/home/YOURUSERNAME/sentin
 
 ### 4. Test the Configuration
 
-Test the config by runnings all tests from the sentinel folder you cloned into
+Test the config by running all tests from the sentinel folder you cloned into
 
     $ ./venv/bin/py.test ./test
 
@@ -67,11 +67,11 @@ To view debug output, set the `SENTINEL_DEBUG` environment variable to anything 
 
 ## Contributing
 
-Please follow the [MachinecoinCore guidelines for contributing](https://github.com/machinecoinpay/machinecoin/blob/v0.12.1.x/CONTRIBUTING.md).
+Please follow the [MachinecoinCore guidelines for contributing](https://github.com/machinecoinpay/machinecoin/blob/master/CONTRIBUTING.md).
 
 Specifically:
 
-* [Contributor Workflow](https://github.com/machinecoinpay/machinecoin/blob/v0.12.1.x/CONTRIBUTING.md#contributor-workflow)
+* [Contributor Workflow](https://github.com/machinecoinpay/machinecoin/blob/master/CONTRIBUTING.md#contributor-workflow)
 
     To contribute a patch, the workflow is as follows:
 

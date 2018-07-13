@@ -10,16 +10,19 @@ default_sentinel_config = os.path.normpath(
 )
 sentinel_config_file = os.environ.get('SENTINEL_CONFIG', default_sentinel_config)
 sentinel_cfg = MachinecoinConfig.tokenize(sentinel_config_file)
-sentinel_version = "1.1.0"
+sentinel_version = "1.2.0"
 min_machinecoind_proto_version_with_sentinel_ping = 70017
 
 
 def get_machinecoin_conf():
-    home = os.environ.get('HOME')
+    if sys.platform == 'win32':
+        machinecoin_conf = os.path.join(os.getenv('APPDATA'), "Machinecoin/machinecoin.conf")
+    else:
+        home = os.environ.get('HOME')
 
-    machinecoin_conf = os.path.join(home, ".machinecoin/machinecoin.conf")
-    if sys.platform == 'darwin':
-        machinecoin_conf = os.path.join(home, "Library/Application Support/Machinecoin/machinecoin.conf")
+        machinecoin_conf = os.path.join(home, ".machinecoin/machinecoin.conf")
+        if sys.platform == 'darwin':
+            machinecoin_conf = os.path.join(home, "Library/Application Support/Machinecoin/machinecoin.conf")
 
     machinecoin_conf = sentinel_cfg.get('machinecoin_conf', machinecoin_conf)
 
@@ -28,6 +31,10 @@ def get_machinecoin_conf():
 
 def get_network():
     return sentinel_cfg.get('network', 'mainnet')
+
+
+def get_rpchost():
+    return sentinel_cfg.get('rpchost', '127.0.0.1')
 
 
 def sqlite_test_db_name(sqlite_file_path):
@@ -81,4 +88,5 @@ def get_db_conn():
 
 machinecoin_conf = get_machinecoin_conf()
 network = get_network()
+rpc_host = get_rpchost()
 db = get_db_conn()
