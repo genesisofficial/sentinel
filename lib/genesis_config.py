@@ -34,7 +34,7 @@ class GenesisConfig():
         creds = {key: value for (key, value) in match}
 
         # standard Genesis defaults...
-        default_port = 40332 if (network == 'mainnet') else 50332
+        default_port = 7233 if (network == 'mainnet') else 17233
 
         # use default port for network if not specified in genesis.conf
         if not ('port' in creds):
