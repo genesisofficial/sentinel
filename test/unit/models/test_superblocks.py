@@ -7,7 +7,7 @@ os.environ['SENTINEL_CONFIG'] = os.path.normpath(os.path.join(os.path.dirname(__
 sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../../../lib')))
 import misc
 import config
-from models import GovernanceObject, Proposal, Superblock, Vote
+from models import GovernanceObject, Proposal, GovernanceBlock, Vote
 
 
 # clear DB tables before each execution
@@ -15,7 +15,7 @@ def setup():
     # clear tables first...
     Vote.delete().execute()
     Proposal.delete().execute()
-    Superblock.delete().execute()
+    GovernanceBlock.delete().execute()
     GovernanceObject.delete().execute()
 
 
@@ -60,9 +60,9 @@ def go_list_proposals():
     return items
 
 
-# list of superblock govobjs to import for testing
+# list of governanceblock govobjs to import for testing
 @pytest.fixture
-def go_list_superblocks():
+def go_list_governanceblocks():
     items = [
         {u'AbsoluteYesCount': 1,
          u'AbstainCount': 0,
@@ -112,8 +112,8 @@ def go_list_superblocks():
 
 
 @pytest.fixture
-def superblock():
-    sb = Superblock(
+def governanceblock():
+    sb = GovernanceBlock(
         event_block_height=62500,
         payment_addresses='yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui|yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV',
         payment_amounts='5|3',
@@ -122,101 +122,101 @@ def superblock():
     return sb
 
 
-def test_superblock_is_valid(superblock):
+def test_governanceblock_is_valid(governanceblock):
     from genesisd import GenesisDaemon
     genesisd = GenesisDaemon.from_genesis_conf(config.genesis_conf)
 
-    orig = Superblock(**superblock.get_dict())  # make a copy
+    orig = GovernanceBlock(**governanceblock.get_dict())  # make a copy
 
     # original as-is should be valid
     assert orig.is_valid() is True
 
     # mess with payment amounts
-    superblock.payment_amounts = '7|yyzx'
-    assert superblock.is_valid() is False
+    governanceblock.payment_amounts = '7|yyzx'
+    assert governanceblock.is_valid() is False
 
-    superblock.payment_amounts = '7,|yzx'
-    assert superblock.is_valid() is False
+    governanceblock.payment_amounts = '7,|yzx'
+    assert governanceblock.is_valid() is False
 
-    superblock.payment_amounts = '7|8'
-    assert superblock.is_valid() is True
+    governanceblock.payment_amounts = '7|8'
+    assert governanceblock.is_valid() is True
 
-    superblock.payment_amounts = ' 7|8'
-    assert superblock.is_valid() is False
+    governanceblock.payment_amounts = ' 7|8'
+    assert governanceblock.is_valid() is False
 
-    superblock.payment_amounts = '7|8 '
-    assert superblock.is_valid() is False
+    governanceblock.payment_amounts = '7|8 '
+    assert governanceblock.is_valid() is False
 
-    superblock.payment_amounts = ' 7|8 '
-    assert superblock.is_valid() is False
+    governanceblock.payment_amounts = ' 7|8 '
+    assert governanceblock.is_valid() is False
 
     # reset
-    superblock = Superblock(**orig.get_dict())
-    assert superblock.is_valid() is True
+    governanceblock = GovernanceBlock(**orig.get_dict())
+    assert governanceblock.is_valid() is True
 
     # mess with payment addresses
-    superblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV|1234 Anywhere ST, Chicago, USA'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV|1234 Anywhere ST, Chicago, USA'
+    assert governanceblock.is_valid() is False
 
     # leading spaces in payment addresses
-    superblock.payment_addresses = ' yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
-    superblock.payment_amounts = '5.00'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = ' yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
+    governanceblock.payment_amounts = '5.00'
+    assert governanceblock.is_valid() is False
 
     # trailing spaces in payment addresses
-    superblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV '
-    superblock.payment_amounts = '5.00'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV '
+    governanceblock.payment_amounts = '5.00'
+    assert governanceblock.is_valid() is False
 
     # leading & trailing spaces in payment addresses
-    superblock.payment_addresses = ' yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV '
-    superblock.payment_amounts = '5.00'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = ' yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV '
+    governanceblock.payment_amounts = '5.00'
+    assert governanceblock.is_valid() is False
 
     # single payment addr/amt is ok
-    superblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
-    superblock.payment_amounts = '5.00'
-    assert superblock.is_valid() is True
+    governanceblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
+    governanceblock.payment_amounts = '5.00'
+    assert governanceblock.is_valid() is True
 
     # ensure number of payment addresses matches number of payments
-    superblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
-    superblock.payment_amounts = '37.00|23.24'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
+    governanceblock.payment_amounts = '37.00|23.24'
+    assert governanceblock.is_valid() is False
 
-    superblock.payment_addresses = 'yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui|yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
-    superblock.payment_amounts = '37.00'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = 'yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui|yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
+    governanceblock.payment_amounts = '37.00'
+    assert governanceblock.is_valid() is False
 
     # ensure amounts greater than zero
-    superblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
-    superblock.payment_amounts = '-37.00'
-    assert superblock.is_valid() is False
+    governanceblock.payment_addresses = 'yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
+    governanceblock.payment_amounts = '-37.00'
+    assert governanceblock.is_valid() is False
 
     # reset
-    superblock = Superblock(**orig.get_dict())
-    assert superblock.is_valid() is True
+    governanceblock = GovernanceBlock(**orig.get_dict())
+    assert governanceblock.is_valid() is True
 
     # mess with proposal hashes
-    superblock.proposal_hashes = '7|yyzx'
-    assert superblock.is_valid() is False
+    governanceblock.proposal_hashes = '7|yyzx'
+    assert governanceblock.is_valid() is False
 
-    superblock.proposal_hashes = '7,|yyzx'
-    assert superblock.is_valid() is False
+    governanceblock.proposal_hashes = '7,|yyzx'
+    assert governanceblock.is_valid() is False
 
-    superblock.proposal_hashes = '0|1'
-    assert superblock.is_valid() is False
+    governanceblock.proposal_hashes = '0|1'
+    assert governanceblock.is_valid() is False
 
-    superblock.proposal_hashes = '0000000000000000000000000000000000000000000000000000000000000000|1111111111111111111111111111111111111111111111111111111111111111'
-    assert superblock.is_valid() is True
+    governanceblock.proposal_hashes = '0000000000000000000000000000000000000000000000000000000000000000|1111111111111111111111111111111111111111111111111111111111111111'
+    assert governanceblock.is_valid() is True
 
     # reset
-    superblock = Superblock(**orig.get_dict())
-    assert superblock.is_valid() is True
+    governanceblock = GovernanceBlock(**orig.get_dict())
+    assert governanceblock.is_valid() is True
 
 
 def test_serialisable_fields():
     s1 = ['event_block_height', 'payment_addresses', 'payment_amounts', 'proposal_hashes']
-    s2 = Superblock.serialisable_fields()
+    s2 = GovernanceBlock.serialisable_fields()
 
     s1.sort()
     s2.sort()
@@ -224,7 +224,7 @@ def test_serialisable_fields():
     assert s2 == s1
 
 
-def test_deterministic_superblock_creation(go_list_proposals):
+def test_deterministic_governanceblock_creation(go_list_proposals):
     import genesislib
     import misc
     from genesisd import GenesisDaemon
@@ -233,11 +233,11 @@ def test_deterministic_superblock_creation(go_list_proposals):
         (go, subobj) = GovernanceObject.import_gobject_from_genesisd(genesisd, item)
 
     max_budget = 60
-    prop_list = Proposal.approved_and_ranked(proposal_quorum=1, next_superblock_max_budget=max_budget)
+    prop_list = Proposal.approved_and_ranked(proposal_quorum=1, next_governanceblock_max_budget=max_budget)
 
     # MAX_GOVERNANCE_OBJECT_DATA_SIZE defined in governance-object.h
     maxgovobjdatasize = 16 * 1024
-    sb = genesislib.create_superblock(prop_list, 72000, max_budget, misc.now(), maxgovobjdatasize)
+    sb = genesislib.create_governanceblock(prop_list, 72000, max_budget, misc.now(), maxgovobjdatasize)
 
     assert sb.event_block_height == 72000
     assert sb.payment_addresses == 'yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui|yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV'
@@ -247,7 +247,7 @@ def test_deterministic_superblock_creation(go_list_proposals):
     assert sb.hex_hash() == 'bb3f33ccf95415c396bd09d35325dbcbc7b067010d51c7ccf772a9e839c1e414'
 
 
-def test_superblock_size_limit(go_list_proposals):
+def test_governanceblock_size_limit(go_list_proposals):
     import genesislib
     import misc
     from genesisd import GenesisDaemon
@@ -256,10 +256,10 @@ def test_superblock_size_limit(go_list_proposals):
         (go, subobj) = GovernanceObject.import_gobject_from_genesisd(genesisd, item)
 
     max_budget = 60
-    prop_list = Proposal.approved_and_ranked(proposal_quorum=1, next_superblock_max_budget=max_budget)
+    prop_list = Proposal.approved_and_ranked(proposal_quorum=1, next_governanceblock_max_budget=max_budget)
 
     maxgovobjdatasize = 469
-    sb = genesislib.create_superblock(prop_list, 72000, max_budget, misc.now(), maxgovobjdatasize)
+    sb = genesislib.create_governanceblock(prop_list, 72000, max_budget, misc.now(), maxgovobjdatasize)
 
     # two proposals in the list, but...
     assert len(prop_list) == 2
@@ -273,13 +273,13 @@ def test_superblock_size_limit(go_list_proposals):
     assert sb.hex_hash() == '6b8cababf797644f1d62003e4cc68c1c40a8c1873c8a68ed0fc88772ea77cc44'
 
 
-def test_deterministic_superblock_selection(go_list_superblocks):
+def test_deterministic_governanceblock_selection(go_list_governanceblocks):
     from genesisd import GenesisDaemon
     genesisd = GenesisDaemon.from_genesis_conf(config.genesis_conf)
 
-    for item in go_list_superblocks:
+    for item in go_list_governanceblocks:
         (go, subobj) = GovernanceObject.import_gobject_from_genesisd(genesisd, item)
 
     # highest hash wins if same -- so just order by hash
-    sb = Superblock.find_highest_deterministic('542f4433e438bdd64697b8381fda1a7a9b7a111c3a4e32fad524d1821d820394')
+    sb = GovernanceBlock.find_highest_deterministic('542f4433e438bdd64697b8381fda1a7a9b7a111c3a4e32fad524d1821d820394')
     assert sb.object_hash == 'bc2834f357da7504138566727c838e6ada74d079e63b6104701f4f8eb05dae36'

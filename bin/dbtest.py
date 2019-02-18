@@ -6,7 +6,7 @@ import sys
 import os
 sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../lib')))
 import config
-from models import Superblock, Proposal, GovernanceObject, Setting, Signal, Vote, Outcome
+from models import GovernanceBlock, Proposal, GovernanceObject, Setting, Signal, Vote, Outcome
 from models import VoteSignals, VoteOutcomes
 from peewee import PeeweeException  # , OperationalError, IntegrityError
 from genesisd import GenesisDaemon
@@ -26,7 +26,7 @@ pr = Proposal(
     end_epoch=1491022800,
 )
 
-# sb = Superblock(
+# sb = GovernanceBlock(
 #     event_block_height = 62500,
 #     payment_addresses = "yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui|yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV",
 #     payment_amounts  = "5|3"

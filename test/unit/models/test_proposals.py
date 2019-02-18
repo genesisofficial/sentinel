@@ -268,14 +268,14 @@ def test_proposal_is_expired(proposal):
 
     proposal.start_epoch = now - (86400 * 2)  # two days ago
     proposal.end_epoch = now - (60 * 60)  # expired one hour ago
-    assert proposal.is_expired(superblockcycle=cycle) is False
+    assert proposal.is_expired(governanceblockcycle=cycle) is False
 
     # fudge factor + a 24-block cycle == an expiry window of 9086, so...
     proposal.end_epoch = now - 9085
-    assert proposal.is_expired(superblockcycle=cycle) is False
+    assert proposal.is_expired(governanceblockcycle=cycle) is False
 
     proposal.end_epoch = now - 9087
-    assert proposal.is_expired(superblockcycle=cycle) is True
+    assert proposal.is_expired(governanceblockcycle=cycle) is True
 
 
 # deterministic ordering
@@ -286,7 +286,7 @@ def test_approved_and_ranked(go_list_proposals):
     for item in go_list_proposals:
         (go, subobj) = GovernanceObject.import_gobject_from_genesisd(genesisd, item)
 
-    prop_list = Proposal.approved_and_ranked(proposal_quorum=1, next_superblock_max_budget=60)
+    prop_list = Proposal.approved_and_ranked(proposal_quorum=1, next_governanceblock_max_budget=60)
 
     assert prop_list[0].object_hash == u'dfd7d63979c0b62456b63d5fc5306dbec451180adee85876cbf5b28c69d1a86c'
     assert prop_list[1].object_hash == u'0523445762025b2e01a2cd34f1d10f4816cf26ee1796167e5b029901e5873630'

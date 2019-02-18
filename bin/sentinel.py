@@ -6,7 +6,7 @@ import init
 import config
 import misc
 from genesisd import GenesisDaemon
-from models import Superblock, Proposal, GovernanceObject
+from models import GovernanceBlock, Proposal, GovernanceObject
 from models import VoteSignals, VoteOutcomes, Transient
 import socket
 from misc import printdbg
@@ -26,7 +26,7 @@ def perform_genesisd_object_sync(genesisd):
 
 def prune_expired_proposals(genesisd):
     # vote delete for old proposals
-    for proposal in Proposal.expired(genesisd.superblockcycle()):
+    for proposal in Proposal.expired(genesisd.governanceblockcycle()):
         proposal.vote(genesisd, VoteSignals.delete, VoteOutcomes.yes)
 
 
@@ -39,27 +39,27 @@ def sentinel_ping(genesisd):
     printdbg("leaving sentinel_ping")
 
 
-def attempt_superblock_creation(genesisd):
+def attempt_governanceblock_creation(genesisd):
     import genesislib
 
     if not genesisd.is_masternode():
-        print("We are not a Masternode... can't submit superblocks!")
+        print("We are not a Masternode... can't submit governanceblocks!")
         return
 
     # query votes for this specific ebh... if we have voted for this specific
     # ebh, then it's voted on. since we track votes this is all done using joins
     # against the votes table
     #
-    # has this masternode voted on *any* superblocks at the given event_block_height?
-    # have we voted FUNDING=YES for a superblock for this specific event_block_height?
+    # has this masternode voted on *any* governanceblocks at the given event_block_height?
+    # have we voted FUNDING=YES for a governanceblock for this specific event_block_height?
 
-    event_block_height = genesisd.next_superblock_height()
+    event_block_height = genesisd.next_governanceblock_height()
 
-    if Superblock.is_voted_funding(event_block_height):
+    if GovernanceBlock.is_voted_funding(event_block_height):
         # printdbg("ALREADY VOTED! 'til next time!")
 
         # vote down any new SBs because we've already chosen a winner
-        for sb in Superblock.at_height(event_block_height):
+        for sb in GovernanceBlock.at_height(event_block_height):
             if not sb.voted_on(signal=VoteSignals.funding):
                 sb.vote(genesisd, VoteSignals.funding, VoteOutcomes.no)
 
@@ -67,33 +67,33 @@ def attempt_superblock_creation(genesisd):
         return
 
     if not genesisd.is_govobj_maturity_phase():
-        printdbg("Not in maturity phase yet -- will not attempt Superblock")
+        printdbg("Not in maturity phase yet -- will not attempt GovernanceBlock")
         return
 
-    proposals = Proposal.approved_and_ranked(proposal_quorum=genesisd.governance_quorum(), next_superblock_max_budget=genesisd.next_superblock_max_budget())
-    budget_max = genesisd.get_superblock_budget_allocation(event_block_height)
+    proposals = Proposal.approved_and_ranked(proposal_quorum=genesisd.governance_quorum(), next_governanceblock_max_budget=genesisd.next_governanceblock_max_budget())
+    budget_max = genesisd.get_governanceblock_budget_allocation(event_block_height)
     sb_epoch_time = genesisd.block_height_to_epoch(event_block_height)
 
     maxgovobjdatasize = genesisd.govinfo['maxgovobjdatasize']
-    sb = genesislib.create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize)
+    sb = genesislib.create_governanceblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize)
     if not sb:
-        printdbg("No superblock created, sorry. Returning.")
+        printdbg("No governanceblock created, sorry. Returning.")
         return
 
     # find the deterministic SB w/highest object_hash in the DB
-    dbrec = Superblock.find_highest_deterministic(sb.hex_hash())
+    dbrec = GovernanceBlock.find_highest_deterministic(sb.hex_hash())
     if dbrec:
         dbrec.vote(genesisd, VoteSignals.funding, VoteOutcomes.yes)
 
         # any other blocks which match the sb_hash are duplicates, delete them
-        for sb in Superblock.select().where(Superblock.sb_hash == sb.hex_hash()):
+        for sb in GovernanceBlock.select().where(GovernanceBlock.sb_hash == sb.hex_hash()):
             if not sb.voted_on(signal=VoteSignals.funding):
                 sb.vote(genesisd, VoteSignals.delete, VoteOutcomes.yes)
 
-        printdbg("VOTED FUNDING FOR SB! We're done here 'til next superblock cycle.")
+        printdbg("VOTED FUNDING FOR SB! We're done here 'til next governanceblock cycle.")
         return
     else:
-        printdbg("The correct superblock wasn't found on the network...")
+        printdbg("The correct governanceblock wasn't found on the network...")
 
     # if we are the elected masternode...
     if (genesisd.we_are_the_winner()):
@@ -103,7 +103,7 @@ def attempt_superblock_creation(genesisd):
 
 def check_object_validity(genesisd):
     # vote (in)valid objects
-    for gov_class in [Proposal, Superblock]:
+    for gov_class in [Proposal, GovernanceBlock]:
         for obj in gov_class.select():
             obj.vote_validity(genesisd)
 
@@ -179,8 +179,8 @@ def main():
     # vote to delete expired proposals
     prune_expired_proposals(genesisd)
 
-    # create a Superblock if necessary
-    attempt_superblock_creation(genesisd)
+    # create a GovernanceBlock if necessary
+    attempt_governanceblock_creation(genesisd)
 
     # schedule the next run
     Scheduler.schedule_next_run()

@@ -8,10 +8,10 @@ sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../../
 
 
 @pytest.fixture
-def superblock():
-    from models import Superblock
+def governanceblock():
+    from models import GovernanceBlock
     # NOTE: no governance_object_id is set
-    sbobj = Superblock(
+    sbobj = GovernanceBlock(
         event_block_height=62500,
         payment_addresses='yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui|yTC62huR4YQEPn9AJHjnQxxreHSbgAoatV',
         payment_amounts='5|3',
@@ -21,8 +21,8 @@ def superblock():
     return sbobj
 
 
-def test_submit_command(superblock):
-    cmd = superblock.get_submit_command()
+def test_submit_command(governanceblock):
+    cmd = governanceblock.get_submit_command()
 
     assert re.match(r'^gobject$', cmd[0]) is not None
     assert re.match(r'^submit$', cmd[1]) is not None

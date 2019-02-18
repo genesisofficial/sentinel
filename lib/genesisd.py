@@ -79,16 +79,16 @@ class GenesisDaemon():
         return self.governance_info
 
     # governance info convenience methods
-    def superblockcycle(self):
-        return self.govinfo['superblockcycle']
+    def governanceblockcycle(self):
+        return self.govinfo['governanceblockcycle']
 
-    def last_superblock_height(self):
+    def last_governanceblock_height(self):
         height = self.rpc_command('getblockcount')
-        cycle = self.superblockcycle()
+        cycle = self.governanceblockcycle()
         return cycle * (height // cycle)
 
-    def next_superblock_height(self):
-        return self.last_superblock_height() + self.superblockcycle()
+    def next_governanceblock_height(self):
+        return self.last_governanceblock_height() + self.governanceblockcycle()
 
     def is_masternode(self):
         return not (self.get_current_masternode_vin() is None)
@@ -107,24 +107,24 @@ class GenesisDaemon():
         block_hash = self.rpc_command('getblockhash', height)
         return block_hash
 
-    def get_superblock_budget_allocation(self, height=None):
+    def get_governanceblock_budget_allocation(self, height=None):
         if height is None:
             height = self.rpc_command('getblockcount')
-        return Decimal(self.rpc_command('getsuperblockbudget', height))
+        return Decimal(self.rpc_command('getgovernanceblockbudget', height))
 
-    def next_superblock_max_budget(self):
-        cycle = self.superblockcycle()
+    def next_governanceblock_max_budget(self):
+        cycle = self.governanceblockcycle()
         current_block_height = self.rpc_command('getblockcount')
 
-        last_superblock_height = (current_block_height // cycle) * cycle
-        next_superblock_height = last_superblock_height + cycle
+        last_governanceblock_height = (current_block_height // cycle) * cycle
+        next_governanceblock_height = last_governanceblock_height + cycle
 
-        last_allocation = self.get_superblock_budget_allocation(last_superblock_height)
-        next_allocation = self.get_superblock_budget_allocation(next_superblock_height)
+        last_allocation = self.get_governanceblock_budget_allocation(last_governanceblock_height)
+        next_allocation = self.get_governanceblock_budget_allocation(next_governanceblock_height)
 
-        next_superblock_max_budget = next_allocation
+        next_governanceblock_max_budget = next_allocation
 
-        return next_superblock_max_budget
+        return next_governanceblock_max_budget
 
     # "my" votes refers to the current running masternode
     # memoized on a per-run, per-object_hash basis
@@ -151,11 +151,11 @@ class GenesisDaemon():
         if config.network == 'testnet':
             maturity_phase_delta = 24    # testnet
 
-        event_block_height = self.next_superblock_height()
+        event_block_height = self.next_governanceblock_height()
         maturity_phase_start_block = event_block_height - maturity_phase_delta
 
         current_height = self.rpc_command('getblockcount')
-        event_block_height = self.next_superblock_height()
+        event_block_height = self.next_governanceblock_height()
 
         # print "current_height = %d" % current_height
         # print "event_block_height = %d" % event_block_height
@@ -166,7 +166,7 @@ class GenesisDaemon():
 
     def we_are_the_winner(self):
         import genesislib
-        # find the elected MN vin for superblock creation...
+        # find the elected MN vin for governanceblock creation...
         current_block_hash = self.current_block_hash()
         mn_list = self.get_masternodes()
         winner = genesislib.elect_mn(block_hash=current_block_hash, mnlist=mn_list)

@@ -30,11 +30,11 @@ db.connect()
 # TODO: lookup table?
 GENESISD_GOVOBJ_TYPES = {
     'proposal': 1,
-    'superblock': 2,
+    'governanceblock': 2,
 }
 GOVOBJ_TYPE_STRINGS = {
     1: 'proposal',
-    2: 'trigger',  # it should be trigger here, not superblock
+    2: 'trigger',  # it should be trigger here, not governanceblock
 }
 
 # schema version follows format 'YYYYMMDD-NUM'.
@@ -126,7 +126,7 @@ class GovernanceObject(BaseModel):
 
         type_class_map = {
             1: Proposal,
-            2: Superblock,
+            2: GovernanceBlock,
         }
         subclass = type_class_map[dikt['type']]
 
@@ -348,12 +348,12 @@ class Proposal(GovernanceClass, BaseModel):
         printdbg("Leaving Proposal#is_valid, Valid = True")
         return True
 
-    def is_expired(self, superblockcycle=None):
-        from constants import SUPERBLOCK_FUDGE_WINDOW
+    def is_expired(self, governanceblockcycle=None):
+        from constants import GOVERNANCEBLOCK_FUDGE_WINDOW
         import genesislib
 
-        if not superblockcycle:
-            raise Exception("Required field superblockcycle missing.")
+        if not governanceblockcycle:
+            raise Exception("Required field governanceblockcycle missing.")
 
         printdbg("In Proposal#is_expired, for Proposal: %s" % self.__dict__)
         now = misc.now()
@@ -362,8 +362,8 @@ class Proposal(GovernanceClass, BaseModel):
         # half the SB cycle, converted to seconds
         # add the fudge_window in seconds, defined elsewhere in Sentinel
         expiration_window_seconds = int(
-            (genesislib.blocks_to_seconds(superblockcycle) / 2) +
-            SUPERBLOCK_FUDGE_WINDOW
+            (genesislib.blocks_to_seconds(governanceblockcycle) / 2) +
+            GOVERNANCEBLOCK_FUDGE_WINDOW
         )
         printdbg("\texpiration_window_seconds = %s" % expiration_window_seconds)
 
@@ -380,11 +380,11 @@ class Proposal(GovernanceClass, BaseModel):
         return False
 
     @classmethod
-    def approved_and_ranked(self, proposal_quorum, next_superblock_max_budget):
+    def approved_and_ranked(self, proposal_quorum, next_governanceblock_max_budget):
         # return all approved proposals, in order of descending vote count
         #
         # we need a secondary 'order by' in case of a tie on vote count, since
-        # superblocks must be deterministic
+        # governanceblocks must be deterministic
         query = (self
                  .select(self, GovernanceObject)  # Note that we are selecting both models.
                  .join(GovernanceObject)
@@ -394,21 +394,21 @@ class Proposal(GovernanceClass, BaseModel):
 
         ranked = []
         for proposal in query:
-            proposal.max_budget = next_superblock_max_budget
+            proposal.max_budget = next_governanceblock_max_budget
             if proposal.is_valid():
                 ranked.append(proposal)
 
         return ranked
 
     @classmethod
-    def expired(self, superblockcycle=None):
-        if not superblockcycle:
-            raise Exception("Required field superblockcycle missing.")
+    def expired(self, governanceblockcycle=None):
+        if not governanceblockcycle:
+            raise Exception("Required field governanceblockcycle missing.")
 
         expired = []
 
         for proposal in self.select():
-            if proposal.is_expired(superblockcycle):
+            if proposal.is_expired(governanceblockcycle):
                 expired.append(proposal)
 
         return expired
@@ -421,8 +421,8 @@ class Proposal(GovernanceClass, BaseModel):
             return rank
 
 
-class Superblock(BaseModel, GovernanceClass):
-    governance_object = ForeignKeyField(GovernanceObject, related_name='superblocks', on_delete='CASCADE', on_update='CASCADE')
+class GovernanceBlock(BaseModel, GovernanceClass):
+    governance_object = ForeignKeyField(GovernanceObject, related_name='governanceblocks', on_delete='CASCADE', on_update='CASCADE')
     event_block_height = IntegerField()
     payment_addresses = TextField()
     payment_amounts = TextField()
@@ -430,17 +430,17 @@ class Superblock(BaseModel, GovernanceClass):
     sb_hash = CharField()
     object_hash = CharField(max_length=64)
 
-    govobj_type = GENESISD_GOVOBJ_TYPES['superblock']
+    govobj_type = GENESISD_GOVOBJ_TYPES['governanceblock']
     only_masternode_can_submit = True
 
     class Meta:
-        db_table = 'superblocks'
+        db_table = 'governanceblocks'
 
     def is_valid(self):
         import genesislib
         import decimal
 
-        printdbg("In Superblock#is_valid, for SB: %s" % self.__dict__)
+        printdbg("In GovernanceBlock#is_valid, for SB: %s" % self.__dict__)
 
         # it's a string from the DB...
         addresses = self.payment_addresses.split('|')
@@ -474,7 +474,7 @@ class Superblock(BaseModel, GovernanceClass):
             printdbg("\tNumber of payment addresses [%s] != number of payment amounts [%s], returning False" % (len(addresses), len(amounts)))
             return False
 
-        printdbg("Leaving Superblock#is_valid, Valid = True")
+        printdbg("Leaving GovernanceBlock#is_valid, Valid = True")
         return True
 
     def hash(self):
@@ -484,8 +484,8 @@ class Superblock(BaseModel, GovernanceClass):
     def hex_hash(self):
         return "%x" % self.hash()
 
-    # workaround for now, b/c we must uniquely ID a superblock with the hash,
-    # in case of differing superblocks
+    # workaround for now, b/c we must uniquely ID a governanceblock with the hash,
+    # in case of differing governanceblocks
     #
     # this prevents sb_hash from being added to the serialised fields
     @classmethod
@@ -497,7 +497,7 @@ class Superblock(BaseModel, GovernanceClass):
             'proposal_hashes'
         ]
 
-    # has this masternode voted to fund *any* superblocks at the given
+    # has this masternode voted to fund *any* governanceblocks at the given
     # event_block_height?
     @classmethod
     def is_voted_funding(self, ebh):
@@ -540,11 +540,11 @@ class Superblock(BaseModel, GovernanceClass):
 
 
 # ok, this is an awkward way to implement these...
-# "hook" into the Superblock model and run this code just before any save()
+# "hook" into the GovernanceBlock model and run this code just before any save()
 from playhouse.signals import pre_save
 
 
-@pre_save(sender=Superblock)
+@pre_save(sender=GovernanceBlock)
 def on_save_handler(model_class, instance, created):
     instance.sb_hash = instance.hex_hash()
 
@@ -684,7 +684,7 @@ def db_models():
         GovernanceObject,
         Setting,
         Proposal,
-        Superblock,
+        GovernanceBlock,
         Signal,
         Outcome,
         Vote

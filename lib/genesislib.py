@@ -93,17 +93,17 @@ def parse_masternode_status_vin(status_vin_string):
     return vin
 
 
-def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize):
-    from models import Superblock, GovernanceObject, Proposal
-    from constants import SUPERBLOCK_FUDGE_WINDOW
+def create_governanceblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize):
+    from models import GovernanceBlock, GovernanceObject, Proposal
+    from constants import GOVERNANCEBLOCK_FUDGE_WINDOW
 
-    # don't create an empty superblock
+    # don't create an empty governanceblock
     if (len(proposals) == 0):
-        printdbg("No proposals, cannot create an empty superblock.")
+        printdbg("No proposals, cannot create an empty governanceblock.")
         return None
 
     budget_allocated = Decimal(0)
-    fudge = SUPERBLOCK_FUDGE_WINDOW  # fudge-factor to allow for slightly incorrect estimates
+    fudge = GOVERNANCEBLOCK_FUDGE_WINDOW  # fudge-factor to allow for slightly incorrect estimates
 
     payments = []
 
@@ -158,7 +158,7 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, 
                    'proposal': "{}".format(proposal.object_hash)}
 
         # calculate current sb data size
-        sb_temp = Superblock(
+        sb_temp = GovernanceBlock(
             event_block_height=event_block_height,
             payment_addresses='|'.join([pd['address'] for pd in payments]),
             payment_amounts='|'.join([pd['amount'] for pd in payments]),
@@ -174,22 +174,22 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, 
         budget_allocated += proposal.payment_amount
         payments.append(payment)
 
-    # don't create an empty superblock
+    # don't create an empty governanceblock
     if not payments:
         printdbg("No proposals made the cut!")
         return None
 
     # 'payments' now contains all the proposals for inclusion in the
-    # Superblock, but needs to be sorted by proposal hash descending
+    # GovernanceBlock, but needs to be sorted by proposal hash descending
     payments.sort(key=lambda k: k['proposal'], reverse=True)
 
-    sb = Superblock(
+    sb = GovernanceBlock(
         event_block_height=event_block_height,
         payment_addresses='|'.join([pd['address'] for pd in payments]),
         payment_amounts='|'.join([pd['amount'] for pd in payments]),
         proposal_hashes='|'.join([pd['proposal'] for pd in payments]),
     )
-    printdbg("generated superblock: %s" % sb.__dict__)
+    printdbg("generated governanceblock: %s" % sb.__dict__)
 
     return sb
 
@@ -204,8 +204,8 @@ def SHIM_serialise_for_genesisd(sentinel_hex):
     # shim for genesisd
     govtype_string = GOVOBJ_TYPE_STRINGS[obj['type']]
 
-    # superblock => "trigger" in genesisd
-    if govtype_string == 'superblock':
+    # governanceblock => "trigger" in genesisd
+    if govtype_string == 'governanceblock':
         govtype_string = 'trigger'
 
     # genesisd expects an array (will be deprecated)
