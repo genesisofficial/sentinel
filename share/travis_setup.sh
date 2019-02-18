@@ -1,9 +1,9 @@
 #!/bin/bash
 set -evx
 
-mkdir ~/.machinecoin
+mkdir ~/.genesis
 
 # safety check
-if [ ! -f ~/.machinecoin/machinecoin.conf ]; then
-  cp share/machinecoin.conf.example ~/.machinecoin/machinecoin.conf
+if [ ! -f ~/.genesis/genesis.conf ]; then
+  cp share/genesis.conf.example ~/.genesis/genesis.conf
 fi

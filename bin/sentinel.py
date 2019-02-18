@@ -5,7 +5,7 @@ sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../lib
 import init
 import config
 import misc
-from machinecoind import MachinecoinDaemon
+from genesisd import GenesisDaemon
 from models import Superblock, Proposal, GovernanceObject
 from models import VoteSignals, VoteOutcomes, Transient
 import socket
@@ -19,30 +19,30 @@ from scheduler import Scheduler
 import argparse
 
 
-# sync machinecoind gobject list with our local relational DB backend
-def perform_machinecoind_object_sync(machinecoind):
-    GovernanceObject.sync(machinecoind)
+# sync genesisd gobject list with our local relational DB backend
+def perform_genesisd_object_sync(genesisd):
+    GovernanceObject.sync(genesisd)
 
 
-def prune_expired_proposals(machinecoind):
+def prune_expired_proposals(genesisd):
     # vote delete for old proposals
-    for proposal in Proposal.expired(machinecoind.superblockcycle()):
-        proposal.vote(machinecoind, VoteSignals.delete, VoteOutcomes.yes)
+    for proposal in Proposal.expired(genesisd.superblockcycle()):
+        proposal.vote(genesisd, VoteSignals.delete, VoteOutcomes.yes)
 
 
-# ping machinecoind
-def sentinel_ping(machinecoind):
+# ping genesisd
+def sentinel_ping(genesisd):
     printdbg("in sentinel_ping")
 
-    machinecoind.ping()
+    genesisd.ping()
 
     printdbg("leaving sentinel_ping")
 
 
-def attempt_superblock_creation(machinecoind):
-    import machinecoinlib
+def attempt_superblock_creation(genesisd):
+    import genesislib
 
-    if not machinecoind.is_masternode():
+    if not genesisd.is_masternode():
         print("We are not a Masternode... can't submit superblocks!")
         return
 
@@ -53,7 +53,7 @@ def attempt_superblock_creation(machinecoind):
     # has this masternode voted on *any* superblocks at the given event_block_height?
     # have we voted FUNDING=YES for a superblock for this specific event_block_height?
 
-    event_block_height = machinecoind.next_superblock_height()
+    event_block_height = genesisd.next_superblock_height()
 
     if Superblock.is_voted_funding(event_block_height):
         # printdbg("ALREADY VOTED! 'til next time!")
@@ -61,21 +61,21 @@ def attempt_superblock_creation(machinecoind):
         # vote down any new SBs because we've already chosen a winner
         for sb in Superblock.at_height(event_block_height):
             if not sb.voted_on(signal=VoteSignals.funding):
-                sb.vote(machinecoind, VoteSignals.funding, VoteOutcomes.no)
+                sb.vote(genesisd, VoteSignals.funding, VoteOutcomes.no)
 
         # now return, we're done
         return
 
-    if not machinecoind.is_govobj_maturity_phase():
+    if not genesisd.is_govobj_maturity_phase():
         printdbg("Not in maturity phase yet -- will not attempt Superblock")
         return
 
-    proposals = Proposal.approved_and_ranked(proposal_quorum=machinecoind.governance_quorum(), next_superblock_max_budget=machinecoind.next_superblock_max_budget())
-    budget_max = machinecoind.get_superblock_budget_allocation(event_block_height)
-    sb_epoch_time = machinecoind.block_height_to_epoch(event_block_height)
+    proposals = Proposal.approved_and_ranked(proposal_quorum=genesisd.governance_quorum(), next_superblock_max_budget=genesisd.next_superblock_max_budget())
+    budget_max = genesisd.get_superblock_budget_allocation(event_block_height)
+    sb_epoch_time = genesisd.block_height_to_epoch(event_block_height)
 
-    maxgovobjdatasize = machinecoind.govinfo['maxgovobjdatasize']
-    sb = machinecoinlib.create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize)
+    maxgovobjdatasize = genesisd.govinfo['maxgovobjdatasize']
+    sb = genesislib.create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, maxgovobjdatasize)
     if not sb:
         printdbg("No superblock created, sorry. Returning.")
         return
@@ -83,12 +83,12 @@ def attempt_superblock_creation(machinecoind):
     # find the deterministic SB w/highest object_hash in the DB
     dbrec = Superblock.find_highest_deterministic(sb.hex_hash())
     if dbrec:
-        dbrec.vote(machinecoind, VoteSignals.funding, VoteOutcomes.yes)
+        dbrec.vote(genesisd, VoteSignals.funding, VoteOutcomes.yes)
 
         # any other blocks which match the sb_hash are duplicates, delete them
         for sb in Superblock.select().where(Superblock.sb_hash == sb.hex_hash()):
             if not sb.voted_on(signal=VoteSignals.funding):
-                sb.vote(machinecoind, VoteSignals.delete, VoteOutcomes.yes)
+                sb.vote(genesisd, VoteSignals.delete, VoteOutcomes.yes)
 
         printdbg("VOTED FUNDING FOR SB! We're done here 'til next superblock cycle.")
         return
@@ -96,24 +96,24 @@ def attempt_superblock_creation(machinecoind):
         printdbg("The correct superblock wasn't found on the network...")
 
     # if we are the elected masternode...
-    if (machinecoind.we_are_the_winner()):
+    if (genesisd.we_are_the_winner()):
         printdbg("we are the winner! Submit SB to network")
-        sb.submit(machinecoind)
+        sb.submit(genesisd)
 
 
-def check_object_validity(machinecoind):
+def check_object_validity(genesisd):
     # vote (in)valid objects
     for gov_class in [Proposal, Superblock]:
         for obj in gov_class.select():
-            obj.vote_validity(machinecoind)
+            obj.vote_validity(genesisd)
 
 
-def is_machinecoind_port_open(machinecoind):
+def is_genesisd_port_open(genesisd):
     # test socket open before beginning, display instructive message to MN
     # operators if it's not
     port_open = False
     try:
-        info = machinecoind.rpc_command('getgovernanceinfo')
+        info = genesisd.rpc_command('getgovernanceinfo')
         port_open = True
     except (socket.error, JSONRPCException) as e:
         print("%s" % e)
@@ -122,21 +122,21 @@ def is_machinecoind_port_open(machinecoind):
 
 
 def main():
-    machinecoind = MachinecoinDaemon.from_machinecoin_conf(config.machinecoin_conf)
+    genesisd = GenesisDaemon.from_genesis_conf(config.genesis_conf)
     options = process_args()
 
-    # check machinecoind connectivity
-    if not is_machinecoind_port_open(machinecoind):
-        print("Cannot connect to machinecoind. Please ensure machinecoind is running and the JSONRPC port is open to Sentinel.")
+    # check genesisd connectivity
+    if not is_genesisd_port_open(genesisd):
+        print("Cannot connect to genesisd. Please ensure genesisd is running and the JSONRPC port is open to Sentinel.")
         return
 
-    # check machinecoind sync
-    if not machinecoind.is_synced():
-        print("machinecoind not synced with network! Awaiting full sync before running Sentinel.")
+    # check genesisd sync
+    if not genesisd.is_synced():
+        print("genesisd not synced with network! Awaiting full sync before running Sentinel.")
         return
 
     # ensure valid masternode
-    if not machinecoind.is_masternode():
+    if not genesisd.is_masternode():
         print("Invalid Masternode Status, cannot continue.")
         return
 
@@ -168,19 +168,19 @@ def main():
     # ========================================================================
     #
     # load "gobject list" rpc command data, sync objects into internal database
-    perform_machinecoind_object_sync(machinecoind)
+    perform_genesisd_object_sync(genesisd)
 
-    if machinecoind.has_sentinel_ping:
-        sentinel_ping(machinecoind)
+    if genesisd.has_sentinel_ping:
+        sentinel_ping(genesisd)
 
     # auto vote network objects as valid/invalid
-    # check_object_validity(machinecoind)
+    # check_object_validity(genesisd)
 
     # vote to delete expired proposals
-    prune_expired_proposals(machinecoind)
+    prune_expired_proposals(genesisd)
 
     # create a Superblock if necessary
-    attempt_superblock_creation(machinecoind)
+    attempt_superblock_creation(genesisd)
 
     # schedule the next run
     Scheduler.schedule_next_run()

@@ -1,12 +1,12 @@
-# Machinecoin Sentinel
+# Genesis Sentinel
 
-An all-powerful toolset for Machinecoin.
+An all-powerful toolset for Genesis.
 
-[![Build Status](https://travis-ci.org/machinecoinpay/sentinel.svg?branch=master)](https://travis-ci.org/machinecoinpay/sentinel)
+[![Build Status](https://travis-ci.org/genesispay/sentinel.svg?branch=master)](https://travis-ci.org/genesispay/sentinel)
 
-Sentinel is an autonomous agent for persisting, processing and automating Machinecoin governance objects and tasks, and for expanded functions in the upcoming Machinecoin V13 release (Evolution).
+Sentinel is an autonomous agent for persisting, processing and automating Genesis governance objects and tasks, and for expanded functions in the upcoming Genesis V13 release (Evolution).
 
-Sentinel is implemented as a Python application that binds to a local version 12 machinecoind instance on each Machinecoin Masternode.
+Sentinel is implemented as a Python application that binds to a local version 12 genesisd instance on each Genesis Masternode.
 
 This guide covers installing Sentinel onto an existing Masternode in Ubuntu 14.04 / 16.04.
 
@@ -23,15 +23,15 @@ Update system packages and ensure virtualenv is installed:
     $ sudo apt-get update
     $ sudo apt-get -y install python-virtualenv
 
-Make sure the local Machinecoin daemon running is at least version 12.1 (120100)
+Make sure the local Genesis daemon running is at least version 12.1 (120100)
 
-    $ machinecoin-cli getinfo | grep version
+    $ genesis-cli getinfo | grep version
 
 ### 2. Install Sentinel
 
 Clone the Sentinel repo and install Python dependencies.
 
-    $ git clone https://github.com/machinecoinpay/sentinel.git && cd sentinel
+    $ git clone https://github.com/genesispay/sentinel.git && cd sentinel
     $ virtualenv ./venv
     $ ./venv/bin/pip install -r requirements.txt
 
@@ -51,13 +51,13 @@ Test the config by running all tests from the sentinel folder you cloned into
 
     $ ./venv/bin/py.test ./test
 
-With all tests passing and crontab setup, Sentinel will stay in sync with machinecoind and the installation is complete
+With all tests passing and crontab setup, Sentinel will stay in sync with genesisd and the installation is complete
 
 ## Configuration
 
-An alternative (non-default) path to the `machinecoin.conf` file can be specified in `sentinel.conf`:
+An alternative (non-default) path to the `genesis.conf` file can be specified in `sentinel.conf`:
 
-    machinecoin_conf=/path/to/machinecoin.conf
+    genesis_conf=/path/to/genesis.conf
 
 ## Troubleshooting
 
@@ -67,11 +67,11 @@ To view debug output, set the `SENTINEL_DEBUG` environment variable to anything 
 
 ## Contributing
 
-Please follow the [MachinecoinCore guidelines for contributing](https://github.com/machinecoinpay/machinecoin/blob/master/CONTRIBUTING.md).
+Please follow the [GenesisCore guidelines for contributing](https://github.com/genesispay/genesis/blob/master/CONTRIBUTING.md).
 
 Specifically:
 
-* [Contributor Workflow](https://github.com/machinecoinpay/machinecoin/blob/master/CONTRIBUTING.md#contributor-workflow)
+* [Contributor Workflow](https://github.com/genesispay/genesis/blob/master/CONTRIBUTING.md#contributor-workflow)
 
     To contribute a patch, the workflow is as follows:
 
@@ -85,4 +85,4 @@ Specifically:
 
 ### License
 
-Released under the MIT license, under the same terms as MachinecoinCore itself. See [LICENSE](LICENSE) for more info.
+Released under the MIT license, under the same terms as GenesisCore itself. See [LICENSE](LICENSE) for more info.

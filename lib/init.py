@@ -56,23 +56,23 @@ def is_database_correctly_configured():
     return configured
 
 
-def has_machinecoin_conf():
+def has_genesis_conf():
     import config
     import io
 
-    valid_machinecoin_conf = False
+    valid_genesis_conf = False
 
-    # ensure machinecoin_conf exists & readable
+    # ensure genesis_conf exists & readable
     #
-    # if not, print a message stating that Machinecoin Core must be installed and
-    # configured, including JSONRPC access in machinecoin.conf
+    # if not, print a message stating that Genesis Core must be installed and
+    # configured, including JSONRPC access in genesis.conf
     try:
-        f = io.open(config.machinecoin_conf)
-        valid_machinecoin_conf = True
+        f = io.open(config.genesis_conf)
+        valid_genesis_conf = True
     except IOError as e:
         print(e)
 
-    return valid_machinecoin_conf
+    return valid_genesis_conf
 
 
 # === begin main
@@ -94,8 +94,8 @@ def main():
         print("Please ensure correct database configuration.")
         sys.exit(1)
 
-    if not has_machinecoin_conf():
-        print("MachinecoinCore must be installed and configured, including JSONRPC access in machinecoin.conf")
+    if not has_genesis_conf():
+        print("GenesisCore must be installed and configured, including JSONRPC access in genesis.conf")
         sys.exit(1)
 
 

@@ -6,13 +6,13 @@ os.environ['SENTINEL_CONFIG'] = os.path.normpath(os.path.join(os.path.dirname(__
 os.environ['SENTINEL_ENV'] = 'test'
 sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../../lib')))
 import config
-from machinecoin_config import MachinecoinConfig
+from genesis_config import GenesisConfig
 
 
 @pytest.fixture
-def machinecoin_conf(**kwargs):
+def genesis_conf(**kwargs):
     defaults = {
-        'rpcuser': 'machinecoinrpc',
+        'rpcuser': 'genesisrpc',
         'rpcpassword': 'EwJeV3fZTyTVozdECF627BkBMnNDwQaVLakG3A4wXYyk',
         'rpcport': 29241,
     }
@@ -34,35 +34,35 @@ rpcport={rpcport}
 
 
 def test_get_rpc_creds():
-    machinecoin_config = machinecoin_conf()
-    creds = MachinecoinConfig.get_rpc_creds(machinecoin_config, 'testnet')
+    genesis_config = genesis_conf()
+    creds = GenesisConfig.get_rpc_creds(genesis_config, 'testnet')
 
     for key in ('user', 'password', 'port'):
         assert key in creds
-    assert creds.get('user') == 'machinecoinrpc'
+    assert creds.get('user') == 'genesisrpc'
     assert creds.get('password') == 'EwJeV3fZTyTVozdECF627BkBMnNDwQaVLakG3A4wXYyk'
     assert creds.get('port') == 29241
 
-    machinecoin_config = machinecoin_conf(rpcpassword='s00pers33kr1t', rpcport=8000)
-    creds = MachinecoinConfig.get_rpc_creds(machinecoin_config, 'testnet')
+    genesis_config = genesis_conf(rpcpassword='s00pers33kr1t', rpcport=8000)
+    creds = GenesisConfig.get_rpc_creds(genesis_config, 'testnet')
 
     for key in ('user', 'password', 'port'):
         assert key in creds
-    assert creds.get('user') == 'machinecoinrpc'
+    assert creds.get('user') == 'genesisrpc'
     assert creds.get('password') == 's00pers33kr1t'
     assert creds.get('port') == 8000
 
-    no_port_specified = re.sub('\nrpcport=.*?\n', '\n', machinecoin_conf(), re.M)
-    creds = MachinecoinConfig.get_rpc_creds(no_port_specified, 'testnet')
+    no_port_specified = re.sub('\nrpcport=.*?\n', '\n', genesis_conf(), re.M)
+    creds = GenesisConfig.get_rpc_creds(no_port_specified, 'testnet')
 
     for key in ('user', 'password', 'port'):
         assert key in creds
-    assert creds.get('user') == 'machinecoinrpc'
+    assert creds.get('user') == 'genesisrpc'
     assert creds.get('password') == 'EwJeV3fZTyTVozdECF627BkBMnNDwQaVLakG3A4wXYyk'
     assert creds.get('port') == 19998
 
 
-# ensure machinecoin network (mainnet, testnet) matches that specified in config
-# requires running machinecoind on whatever port specified...
+# ensure genesis network (mainnet, testnet) matches that specified in config
+# requires running genesisd on whatever port specified...
 #
-# This is more of a machinecoind/jsonrpc test than a config test...
+# This is more of a genesisd/jsonrpc test than a config test...

@@ -3,30 +3,30 @@
 """
 import sys
 import os
-from machinecoin_config import MachinecoinConfig
+from genesis_config import GenesisConfig
 
 default_sentinel_config = os.path.normpath(
     os.path.join(os.path.dirname(__file__), '../sentinel.conf')
 )
 sentinel_config_file = os.environ.get('SENTINEL_CONFIG', default_sentinel_config)
-sentinel_cfg = MachinecoinConfig.tokenize(sentinel_config_file)
+sentinel_cfg = GenesisConfig.tokenize(sentinel_config_file)
 sentinel_version = "1.2.0"
-min_machinecoind_proto_version_with_sentinel_ping = 70017
+min_genesisd_proto_version_with_sentinel_ping = 70017
 
 
-def get_machinecoin_conf():
+def get_genesis_conf():
     if sys.platform == 'win32':
-        machinecoin_conf = os.path.join(os.getenv('APPDATA'), "Machinecoin/machinecoin.conf")
+        genesis_conf = os.path.join(os.getenv('APPDATA'), "Genesis/genesis.conf")
     else:
         home = os.environ.get('HOME')
 
-        machinecoin_conf = os.path.join(home, ".machinecoin/machinecoin.conf")
+        genesis_conf = os.path.join(home, ".genesis/genesis.conf")
         if sys.platform == 'darwin':
-            machinecoin_conf = os.path.join(home, "Library/Application Support/Machinecoin/machinecoin.conf")
+            genesis_conf = os.path.join(home, "Library/Application Support/Genesis/genesis.conf")
 
-    machinecoin_conf = sentinel_cfg.get('machinecoin_conf', machinecoin_conf)
+    genesis_conf = sentinel_cfg.get('genesis_conf', genesis_conf)
 
-    return machinecoin_conf
+    return genesis_conf
 
 
 def get_network():
@@ -86,7 +86,7 @@ def get_db_conn():
     return db
 
 
-machinecoin_conf = get_machinecoin_conf()
+genesis_conf = get_genesis_conf()
 network = get_network()
 rpc_host = get_rpchost()
 db = get_db_conn()

@@ -1,5 +1,5 @@
 """
-machinecoind JSONRPC interface
+genesisd JSONRPC interface
 """
 import sys
 import os
@@ -13,7 +13,7 @@ from decimal import Decimal
 import time
 
 
-class MachinecoinDaemon():
+class GenesisDaemon():
     def __init__(self, **kwargs):
         host = kwargs.get('host', '127.0.0.1')
         user = kwargs.get('user')
@@ -22,7 +22,7 @@ class MachinecoinDaemon():
 
         self.creds = (user, password, host, port)
 
-        # memoize calls to some machinecoind methods
+        # memoize calls to some genesisd methods
         self.governance_info = None
         self.gobject_votes = {}
 
@@ -31,10 +31,10 @@ class MachinecoinDaemon():
         return AuthServiceProxy("http://{0}:{1}@{2}:{3}".format(*self.creds))
 
     @classmethod
-    def from_machinecoin_conf(self, machinecoin_dot_conf):
-        from machinecoin_config import MachinecoinConfig
-        config_text = MachinecoinConfig.slurp_config_file(machinecoin_dot_conf)
-        creds = MachinecoinConfig.get_rpc_creds(config_text, config.network)
+    def from_genesis_conf(self, genesis_dot_conf):
+        from genesis_config import GenesisConfig
+        config_text = GenesisConfig.slurp_config_file(genesis_dot_conf)
+        creds = GenesisConfig.get_rpc_creds(config_text, config.network)
 
         creds[u'host'] = config.rpc_host
 
@@ -50,7 +50,7 @@ class MachinecoinDaemon():
         return [Masternode(k, v) for (k, v) in mnlist.items()]
 
     def get_current_masternode_vin(self):
-        from machinecoinlib import parse_masternode_status_vin
+        from genesislib import parse_masternode_status_vin
 
         my_vin = None
 
@@ -129,7 +129,7 @@ class MachinecoinDaemon():
     # "my" votes refers to the current running masternode
     # memoized on a per-run, per-object_hash basis
     def get_my_gobject_votes(self, object_hash):
-        import machinecoinlib
+        import genesislib
         if not self.gobject_votes.get(object_hash):
             my_vin = self.get_current_masternode_vin()
             # if we can't get MN vin from output of `masternode status`,
@@ -141,7 +141,7 @@ class MachinecoinDaemon():
 
             cmd = ['gobject', 'getcurrentvotes', object_hash, txid, vout_index]
             raw_votes = self.rpc_command(*cmd)
-            self.gobject_votes[object_hash] = machinecoinlib.parse_raw_votes(raw_votes)
+            self.gobject_votes[object_hash] = genesislib.parse_raw_votes(raw_votes)
 
         return self.gobject_votes[object_hash]
 
@@ -165,11 +165,11 @@ class MachinecoinDaemon():
         return (current_height >= maturity_phase_start_block)
 
     def we_are_the_winner(self):
-        import machinecoinlib
+        import genesislib
         # find the elected MN vin for superblock creation...
         current_block_hash = self.current_block_hash()
         mn_list = self.get_masternodes()
-        winner = machinecoinlib.elect_mn(block_hash=current_block_hash, mnlist=mn_list)
+        winner = genesislib.elect_mn(block_hash=current_block_hash, mnlist=mn_list)
         my_vin = self.get_current_masternode_vin()
 
         # print "current_block_hash: [%s]" % current_block_hash
@@ -179,7 +179,7 @@ class MachinecoinDaemon():
         return (winner == my_vin)
 
     def estimate_block_time(self, height):
-        import machinecoinlib
+        import genesislib
         """
         Called by block_height_to_epoch if block height is in the future.
         Call `block_height_to_epoch` instead of this method.
@@ -192,7 +192,7 @@ class MachinecoinDaemon():
         if (diff < 0):
             raise Exception("Oh Noes.")
 
-        future_seconds = machinecoinlib.blocks_to_seconds(diff)
+        future_seconds = genesislib.blocks_to_seconds(diff)
         estimated_epoch = int(time.time() + future_seconds)
 
         return estimated_epoch
@@ -220,7 +220,7 @@ class MachinecoinDaemon():
     @property
     def has_sentinel_ping(self):
         getinfo = self.rpc_command('getnetworkinfo')
-        return (getinfo['protocolversion'] >= config.min_machinecoind_proto_version_with_sentinel_ping)
+        return (getinfo['protocolversion'] >= config.min_genesisd_proto_version_with_sentinel_ping)
 
     def ping(self):
         self.rpc_command('sentinelping', config.sentinel_version)

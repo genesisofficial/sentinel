@@ -19,24 +19,24 @@ class GovernanceClass(object):
         return self.governance_object
 
     # pass thru to GovernanceObject#vote
-    def vote(self, machinecoind, signal, outcome):
-        return self.go.vote(machinecoind, signal, outcome)
+    def vote(self, genesisd, signal, outcome):
+        return self.go.vote(genesisd, signal, outcome)
 
     # pass thru to GovernanceObject#voted_on
     def voted_on(self, **kwargs):
         return self.go.voted_on(**kwargs)
 
-    def vote_validity(self, machinecoind):
+    def vote_validity(self, genesisd):
         if self.is_valid():
             printdbg("Voting valid! %s: %d" % (self.__class__.__name__, self.id))
-            self.vote(machinecoind, models.VoteSignals.valid, models.VoteOutcomes.yes)
+            self.vote(genesisd, models.VoteSignals.valid, models.VoteOutcomes.yes)
         else:
             printdbg("Voting INVALID! %s: %d" % (self.__class__.__name__, self.id))
-            self.vote(machinecoind, models.VoteSignals.valid, models.VoteOutcomes.no)
+            self.vote(genesisd, models.VoteSignals.valid, models.VoteOutcomes.no)
 
     def get_submit_command(self):
-        import machinecoinlib
-        obj_data = machinecoinlib.SHIM_serialise_for_machinecoind(self.serialise())
+        import genesislib
+        obj_data = genesislib.SHIM_serialise_for_genesisd(self.serialise())
 
         # new objects won't have parent_hash, revision, etc...
         cmd = ['gobject', 'submit', '0', '1', str(int(time.time())), obj_data]
@@ -47,15 +47,15 @@ class GovernanceClass(object):
 
         return cmd
 
-    def submit(self, machinecoind):
+    def submit(self, genesisd):
         # don't attempt to submit a superblock unless a masternode
         # note: will probably re-factor this, this has code smell
-        if (self.only_masternode_can_submit and not machinecoind.is_masternode()):
+        if (self.only_masternode_can_submit and not genesisd.is_masternode()):
             print("Not a masternode. Only masternodes may submit these objects")
             return
 
         try:
-            object_hash = machinecoind.rpc_command(*self.get_submit_command())
+            object_hash = genesisd.rpc_command(*self.get_submit_command())
             printdbg("Submitted: [%s]" % object_hash)
         except JSONRPCException as e:
             print("Unable to submit: %s" % e.message)
@@ -66,9 +66,9 @@ class GovernanceClass(object):
 
         return binascii.hexlify(simplejson.dumps(self.get_dict(), sort_keys=True).encode('utf-8')).decode('utf-8')
 
-    def machinecoind_serialise(self):
-        import machinecoinlib
-        return machinecoinlib.SHIM_serialise_for_machinecoind(self.serialise())
+    def genesisd_serialise(self):
+        import genesislib
+        return genesislib.SHIM_serialise_for_genesisd(self.serialise())
 
     @classmethod
     def serialisable_fields(self):

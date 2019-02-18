@@ -12,15 +12,15 @@ from misc import printdbg, epoch2str
 import time
 
 
-def is_valid_machinecoin_address(address, network='mainnet'):
+def is_valid_genesis_address(address, network='mainnet'):
     # Only public key addresses are allowed
     # A valid address is a RIPEMD-160 hash which contains 20 bytes
     # Prior to base58 encoding 1 version byte is prepended and
     # 4 checksum bytes are appended so the total number of
     # base58 encoded bytes should be 25.  This means the number of characters
     # in the encoding should be about 34 ( 25 * log2( 256 ) / log2( 58 ) ).
-    # machinecoin_version = 53 if network == 'testnet' else 50
-    machinecoin_script_version = 23 if network == 'testnet' else 20
+    # genesis_version = 53 if network == 'testnet' else 50
+    genesis_script_version = 23 if network == 'testnet' else 20
 
     # Check length (This is important because the base58 library has problems
     # with long addresses (which are invalid anyway).
@@ -33,10 +33,10 @@ def is_valid_machinecoin_address(address, network='mainnet'):
         decoded = base58.b58decode_chk(address)
         address_version = ord(decoded[0:1])
     except:
-        # rescue from exception, not a valid Machinecoin address
+        # rescue from exception, not a valid Genesis address
         return False
 
-    if (address_version != machinecoin_script_version):
+    if (address_version != genesis_script_version):
         return False
 
     return True
@@ -164,7 +164,7 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, 
             payment_amounts='|'.join([pd['amount'] for pd in payments]),
             proposal_hashes='|'.join([pd['proposal'] for pd in payments])
         )
-        data_size = len(sb_temp.machinecoind_serialise())
+        data_size = len(sb_temp.genesisd_serialise())
 
         if data_size > maxgovobjdatasize:
             printdbg("MAX_GOVERNANCE_OBJECT_DATA_SIZE limit reached!")
@@ -195,25 +195,25 @@ def create_superblock(proposals, event_block_height, budget_max, sb_epoch_time, 
 
 
 # shims 'til we can fix the JSON format
-def SHIM_serialise_for_machinecoind(sentinel_hex):
+def SHIM_serialise_for_genesisd(sentinel_hex):
     from models import GOVOBJ_TYPE_STRINGS
 
     # unpack
     obj = deserialise(sentinel_hex)
 
-    # shim for machinecoind
+    # shim for genesisd
     govtype_string = GOVOBJ_TYPE_STRINGS[obj['type']]
 
-    # superblock => "trigger" in machinecoind
+    # superblock => "trigger" in genesisd
     if govtype_string == 'superblock':
         govtype_string = 'trigger'
 
-    # machinecoind expects an array (will be deprecated)
+    # genesisd expects an array (will be deprecated)
     obj = [(govtype_string, obj,)]
 
     # re-pack
-    machinecoind_hex = serialise(obj)
-    return machinecoind_hex
+    genesisd_hex = serialise(obj)
+    return genesisd_hex
 
 
 # convenience
@@ -237,7 +237,7 @@ def did_we_vote(output):
     err_msg = ''
 
     try:
-        detail = output.get('detail').get('machinecoin.conf')
+        detail = output.get('detail').get('genesis.conf')
         result = detail.get('result')
         if 'errorMessage' in detail:
             err_msg = detail.get('errorMessage')
