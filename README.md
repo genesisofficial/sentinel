@@ -2,13 +2,13 @@
 
 An all-powerful toolset for Genesis.
 
-[![Build Status](https://travis-ci.org/genesispay/sentinel.svg?branch=master)](https://travis-ci.org/genesispay/sentinel)
+[![Build Status](https://travis-ci.org/genesisofficial/sentinel.svg?branch=master)](https://travis-ci.org/genesisofficial/sentinel)
 
-Sentinel is an autonomous agent for persisting, processing and automating Genesis governance objects and tasks, and for expanded functions in the upcoming Genesis V13 release (Evolution).
+Sentinel is an autonomous agent for persisting, processing and automating Genesis Masternode governance objects and tasks, and for expanded functions in the upcoming Genesis v3 release (Expansion).
 
 Sentinel is implemented as a Python application that binds to a local version 12 genesisd instance on each Genesis Masternode.
 
-This guide covers installing Sentinel onto an existing Masternode in Ubuntu 14.04 / 16.04.
+This guide covers installing Sentinel onto an existing Masternode in Ubuntu 16/18.04.
 
 ## Installation
 
@@ -23,7 +23,7 @@ Update system packages and ensure virtualenv is installed:
     $ sudo apt-get update
     $ sudo apt-get -y install python-virtualenv
 
-Make sure the local Genesis daemon running is at least version 12.1 (120100)
+Make sure the local genesisd daemon running is at least version 3.0
 
     $ genesis-cli getinfo | grep version
 
@@ -31,7 +31,7 @@ Make sure the local Genesis daemon running is at least version 12.1 (120100)
 
 Clone the Sentinel repo and install Python dependencies.
 
-    $ git clone https://github.com/genesispay/sentinel.git && cd sentinel
+    $ git clone https://github.com/genesisofficial/sentinel.git && cd sentinel
     $ virtualenv ./venv
     $ ./venv/bin/pip install -r requirements.txt
 
@@ -67,11 +67,11 @@ To view debug output, set the `SENTINEL_DEBUG` environment variable to anything 
 
 ## Contributing
 
-Please follow the [GenesisCore guidelines for contributing](https://github.com/genesispay/genesis/blob/master/CONTRIBUTING.md).
+Please follow the [Genesis Official guidelines for contributing](https://github.com/genesisofficial/genesis/blob/master/CONTRIBUTING.md).
 
 Specifically:
 
-* [Contributor Workflow](https://github.com/genesispay/genesis/blob/master/CONTRIBUTING.md#contributor-workflow)
+* [Contributor Workflow](https://github.com/genesisofficial/genesis/blob/master/CONTRIBUTING.md#contributor-workflow)
 
     To contribute a patch, the workflow is as follows:
 
@@ -85,4 +85,4 @@ Specifically:
 
 ### License
 
-Released under the MIT license, under the same terms as GenesisCore itself. See [LICENSE](LICENSE) for more info.
+Released under the MIT license, under the same terms as Genesis Official itself. See [LICENSE](LICENSE) for more info.

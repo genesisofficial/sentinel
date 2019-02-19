@@ -68,7 +68,7 @@ def proposal():
         start_epoch=1483250400,  # 2017-01-01
         end_epoch=2122520400,
         name="wine-n-cheeze-party",
-        url="https://genesiscentral.com/wine-n-cheeze-party",
+        url="https://genesisnetwork.io/wine-n-cheeze-party",
         payment_address="yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui",
         payment_amount=13
     )

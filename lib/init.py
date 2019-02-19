@@ -64,7 +64,7 @@ def has_genesis_conf():
 
     # ensure genesis_conf exists & readable
     #
-    # if not, print a message stating that Genesis Core must be installed and
+    # if not, print a message stating that Genesis Official must be installed and
     # configured, including JSONRPC access in genesis.conf
     try:
         f = io.open(config.genesis_conf)
@@ -95,7 +95,7 @@ def main():
         sys.exit(1)
 
     if not has_genesis_conf():
-        print("GenesisCore must be installed and configured, including JSONRPC access in genesis.conf")
+        print("Genesis Official must be installed and configured, including JSONRPC access in genesis.conf")
         sys.exit(1)
 
 
