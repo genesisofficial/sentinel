@@ -137,7 +137,7 @@ def main():
 
     # ensure valid masternode
     if not genesisd.is_masternode():
-        print("Invalid Masternode Status, cannot continue.")
+        print("Invalid Masternode Status (node claims to not be a masternode), cannot continue.")
         return
 
     # register a handler if SENTINEL_DEBUG is set
